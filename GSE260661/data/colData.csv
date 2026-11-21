@@ -1,0 +1,17 @@
+sample_id,gsm,patient,timepoint,folfox_cycles,ctcae_grade,oxaliplatin_total_mg,age,sex,depth_T,nodes_N,tnm_stage,grade,delta_grade,delta_grade_c,late_delta_grade_c
+G1-S1,GSM8121978,S1,early,2,1,242,62,Female,T4,N1,IIIB,1,2,1,0
+G1-S2,GSM8121979,S2,early,3,1,342,68,Female,T2,N0,I,1,1,0,0
+G1-S3,GSM8121980,S3,early,3,1,378,56,Female,T3,N0,IIA,1,1,0,0
+G1-S4,GSM8121981,S4,early,2,1,314,58,Male,T4a,N0,IIB,1,0,-1,0
+G1-S5,GSM8121982,S5,early,3,2,443,64,Male,T3,N2b,IIIC,2,1,0,0
+G1-S6,GSM8121983,S6,early,3,2,471,71,Male,T2,N1,IIIA,2,0,-1,0
+G1-S7,GSM8121984,S7,early,2,1,270,59,Female,T4a,N1b,IVB,1,1,0,0
+G1-S8,GSM8121985,S8,early,3,1,501,61,Male,T4a,N0,IIB,1,2,1,0
+G2-S1,GSM8121986,S1,late,7,3,847,62,Female,T4,N1,IIIB,3,2,1,1
+G2-S2,GSM8121987,S2,late,7,2,798,68,Female,T2,N0,I,2,1,0,0
+G2-S3,GSM8121988,S3,late,8,2,1008,56,Female,T3,N0,IIA,2,1,0,0
+G2-S4,GSM8121989,S4,late,6,1,942,58,Male,T4a,N0,IIB,1,0,-1,-1
+G2-S5,GSM8121990,S5,late,8,3,1176,64,Male,T3,N2b,IIIC,3,1,0,0
+G2-S6,GSM8121991,S6,late,7,2,1099,71,Male,T2,N1,IIIA,2,0,-1,-1
+G2-S7,GSM8121992,S7,late,6,2,810,59,Female,T4a,N1b,IVB,2,1,0,0
+G2-S8,GSM8121993,S8,late,8,3,1328,61,Male,T4a,N0,IIB,3,2,1,1

@@ -1,0 +1,207 @@
+# ============================================================
+# Plasma small RNA-seq (circulating miRNA): GSE260661
+# Colorectal cancer patients on FOLFOX, 8 patients sampled twice (2–3 and 6–8 cycles). There is no
+# untreated control, so the models test the within-patient change with cumulative exposure and its relation
+# to the CIPN grade (config.yaml `models:`). Scripts: ../scripts/mirna/ (dataset-agnostic).
+#
+# Requires Snakemake 9. Usage (from this folder):
+#   conda activate genomic-variants        # Snakemake 9
+#   snakemake -n --use-conda               # dry-run
+#   snakemake --use-conda --cores 2
+#
+# R environment `mirna` (envs/mirna.yaml, pinned by envs/mirna.linux-64.pin.txt); report: envs/report.yaml.
+# The `targets` and `kegg_annotation` rules need internet (multiMiR server, KEGG REST) and cache into cache/.
+# ============================================================
+
+configfile: "config.yaml"
+
+ENV = "envs/mirna.yaml"
+ENV_REPORT = "envs/report.yaml"
+S = "../scripts/mirna"
+KEGG_ORG = config["enrichment"]["organism_kegg"]
+MODELS = list(config["models"])
+
+
+rule all:
+    input:
+        "results/de_summary.tsv",
+        expand("results/de_{model}.csv", model=MODELS),
+        "results/target_enrichment_GO.csv",
+        "results/target_enrichment_KEGG.csv",
+        "reports/report.html",
+
+
+# ------------------------------------------------------------
+# 01: GEO count files + curated sample sheet -> count matrix and colData.
+# Downloads the GEO tar and SOFT file into data/ only when they are missing.
+# ------------------------------------------------------------
+rule prepare:
+    input:
+        samples=config["input"]["samples"],
+    output:
+        counts="data/counts.csv",
+        coldata="data/colData.csv",
+        dge="data/dge_raw.rds",
+        geo_check="results/geo_metadata_check.tsv",
+        library_qc="results/library_qc.tsv",
+    conda:
+        ENV
+    log:
+        "logs/prepare.log",
+    script:
+        f"{S}/01_prepare_geo.R"
+
+
+# ------------------------------------------------------------
+# 02: filtering, TMM, QC plots and edgeR QL for every model in config `models:`
+# ------------------------------------------------------------
+rule differential:
+    input:
+        dge=rules.prepare.output.dge,
+    output:
+        tables=expand("results/de_{model}.csv", model=MODELS),
+        summary="results/de_summary.tsv",
+        candidates="results/candidates.tsv",
+        logcpm="results/log2_cpm.csv",
+        fit="data/fits.rds",
+        library="plots/library_sizes.png",
+        top_mirnas="plots/top_mirnas.png",
+        hemolysis="plots/hemolysis.png",
+        density="plots/density_logcpm.png",
+        mds="plots/mds.png",
+        correlation="plots/sample_correlation.png",
+        bcv="plots/bcv.png",
+        ql="plots/ql_dispersion.png",
+        volcano=expand("plots/volcano_{model}.png", model=MODELS),
+        pvalues=expand("plots/pvalue_histogram_{model}.png", model=MODELS),
+        heatmap="plots/heatmap.png",
+        model_comparison="plots/model_comparison.png",
+        candidates_plot="plots/candidates.png",
+    conda:
+        ENV
+    log:
+        "logs/differential.log",
+    script:
+        f"{S}/02_differential_expression.R"
+
+
+# ------------------------------------------------------------
+# Validated targets of every tested miRNA (multiMiR), cached: the universe of the enrichment.
+# ------------------------------------------------------------
+rule targets:
+    input:
+        logcpm=rules.differential.output.logcpm,
+    output:
+        targets="cache/multimir/validated_targets.tsv",
+    conda:
+        ENV
+    log:
+        "logs/targets.log",
+    script:
+        f"{S}/03_targets.R"
+
+
+# KEGG gene–pathway table downloaded once (same rule as bulk-rna-seq). Delete cache/kegg/ to refresh.
+rule kegg_annotation:
+    output:
+        link=f"cache/kegg/{KEGG_ORG}_link_pathway.tsv",
+        names=f"cache/kegg/{KEGG_ORG}_list_pathway.tsv",
+    params:
+        url="https://rest.kegg.jp",
+        org=KEGG_ORG,
+    log:
+        "logs/kegg_annotation.log",
+    shell:
+        """
+        (date -Iseconds
+         curl -fsS --retry 5 --retry-all-errors --retry-delay 30 -m 1800 \\
+             -o {output.link}.part {params.url}/link/{params.org}/pathway
+         curl -fsS --retry 5 --retry-all-errors --retry-delay 30 -m 600 \\
+             -o {output.names}.part {params.url}/list/pathway/{params.org}
+         test -s {output.link}.part && test -s {output.names}.part
+         mv {output.link}.part {output.link}
+         mv {output.names}.part {output.names}
+         wc -l {output.link} {output.names}) > {log} 2>&1
+        """
+
+
+# ------------------------------------------------------------
+# 04: GO BP / KEGG over-representation of the validated targets of the DE miRNAs (primary model)
+# ------------------------------------------------------------
+rule enrichment:
+    input:
+        de=f"results/de_{config['primary_model']}.csv",
+        targets=rules.targets.output.targets,
+        kegg_link=rules.kegg_annotation.output.link,
+        kegg_names=rules.kegg_annotation.output.names,
+    output:
+        de_targets="results/de_mirna_targets.csv",
+        go="results/target_enrichment_GO.csv",
+        kegg="results/target_enrichment_KEGG.csv",
+        dotplot="plots/target_enrichment.png",
+        session="reports/sessionInfo.txt",
+    conda:
+        ENV
+    log:
+        "logs/enrichment.log",
+    script:
+        f"{S}/04_target_enrichment.R"
+
+
+# ------------------------------------------------------------
+# Report: HTML summary of the whole analysis (plots/ + results/)
+# ------------------------------------------------------------
+rule report:
+    input:
+        coldata=rules.prepare.output.coldata,
+        geo_check=rules.prepare.output.geo_check,
+        library_qc=rules.prepare.output.library_qc,
+        summary=rules.differential.output.summary,
+        tables=rules.differential.output.tables,
+        candidates=rules.differential.output.candidates,
+        plots=[f for k, f in rules.differential.output.items() if str(f).endswith(".png")]
+        + [rules.enrichment.output.dotplot],
+        targets=rules.targets.output.targets,
+        de_targets=rules.enrichment.output.de_targets,
+        go=rules.enrichment.output.go,
+        kegg=rules.enrichment.output.kegg,
+        session=rules.enrichment.output.session,
+        config=["config.yaml"],
+        envs=["envs/mirna.yaml", "envs/report.yaml"],
+        scripts=[f"{S}/report.py", "../scripts/html_report.py"],
+        code=[f"{S}/02_differential_expression.R", f"{S}/04_target_enrichment.R"],
+    output:
+        html="reports/report.html",
+    params:
+        title=f"{config['dataset']}: circulating miRNAs during FOLFOX chemotherapy",
+        subtitle=config["title"],
+        paper="""
+Ju Y, Baek DH, Choi GE, Jang A. *Exploring microRNA patterns as biomarkers of FOLFOX chemotherapy-induced
+peripheral neuropathy in patients with colorectal cancer.* BBA Mol Basis Dis 1870 (2024) 167209,
+[doi:10.1016/j.bbadis.2024.167209](https://doi.org/10.1016/j.bbadis.2024.167209).
+""",
+        design="""
+Plasma of **8 colorectal cancer patients** on FOLFOX (5-fluorouracil, leucovorin, oxaliplatin) at Pusan
+National University Hospital, each sampled **twice**: an *early* draw after 2–3 cycles and a *late* draw
+after 6–8 cycles. Small RNA-seq (NEBNext, NextSeq 550, 75 bp single-end); the authors deposited one raw count
+file per sample (2,588 mature miRNAs, miRBase). Chemotherapy-induced peripheral neuropathy (CIPN) was graded
+with NCI-CTCAE v4.03 at each draw.
+
+**There is no untreated control group**: every patient received FOLFOX. The analysis therefore asks how
+circulating miRNAs change *within the same patient* as exposure accumulates, and whether that change follows
+the worsening of neuropathy. Time on treatment, cumulative oxaliplatin dose and CIPN grade all increase
+together, so the late-vs-early effect cannot be attributed to any one of them (nor separated from disease
+course or other drugs).
+""",
+        paper_analysis="""
+The authors treated the early and late draws as **independent groups** (ExDEGA, unadjusted p < 0.05 and fold
+change > 2) and reported two miRNAs higher in the late draw, miR-222-3p and miR-3184-5p. In a separate
+qPCR cohort of 27 patients (12 with ≤3 and 15 with ≥6 cycles; no sequencing data) only miR-3184-5p differed
+(ROC AUC 0.78). They did not use the pairing and did not correct for the 2,588 tests.
+""",
+    conda:
+        ENV_REPORT
+    log:
+        "logs/report.log",
+    script:
+        f"{S}/report.py"

@@ -1,0 +1,30 @@
+# R environment of the miRNA projects: edgeR (QL), multiMiR (validated targets), clusterProfiler (GO/KEGG).
+# Exact versions: envs/mirna.linux-64.pin.txt.
+name: mirna
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  # R
+  - r-base=4.5.3
+
+  # CRAN
+  - r-ggplot2
+  - r-readr
+  - r-dplyr
+  - r-tidyr
+  - r-tibble
+  - r-stringr
+  - r-pheatmap
+  - r-ggrepel
+  - r-patchwork
+
+  # Bioconductor
+  - bioconductor-edger
+  - bioconductor-limma
+  - bioconductor-multimir
+  - bioconductor-clusterprofiler
+  - bioconductor-enrichplot
+  - bioconductor-org.hs.eg.db

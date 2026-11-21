@@ -1,0 +1,109 @@
+# ============================================================
+# Dataset configuration (GSE260661). The scripts in ../scripts/mirna/ are dataset-agnostic: everything
+# that differs between datasets is here.
+# ============================================================
+
+dataset: GSE260661
+title: "Plasma miRNAs of colorectal cancer patients during FOLFOX: ≥6 vs ≤3 cycles (paired)"
+
+# GEO per-sample count files (one tab-separated file per GSM: miRNA name + raw read count). The tar is
+# downloaded and extracted into data/ only when raw_dir is missing; series_soft is used to compare the GEO
+# characteristics with the curated sample sheet.
+input:
+  geo_accession: GSE260661
+  raw_tar_url: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE260nnn/GSE260661/suppl/GSE260661_RAW.tar
+  raw_dir: data/GSE260661_RAW
+  series_soft_url: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE260nnn/GSE260661/soft/GSE260661_family.soft.gz
+  series_soft: data/GSE260661_family.soft.gz
+  # Curated from Ju et al. 2024, Table 1 (GEO characteristics are wrong for the G2 samples).
+  samples: data/samples.tsv
+  # Sample id = file name after "GSM<digits>_" without ".txt.gz" (e.g. G1-S1); must match samples.tsv.
+  file_pattern: "^GSM[0-9]+_(.+)\\.txt\\.gz$"
+
+samples:
+  id_column: sample_id
+  patient_column: patient
+  timepoint_column: timepoint
+  grade_column: ctcae_grade
+
+# Timepoint value in samples.tsv -> label used in the models (valid R names). Positive log2FC = higher in
+# `treatment` (the later draw).
+groups:
+  labels:
+    G1: early
+    G2: late
+  reference: early
+  treatment: late
+  descriptions:
+    early: "first draw, 2–3 FOLFOX cycles"
+    late: "second draw, 6–8 FOLFOX cycles"
+  colors:
+    early: "#3399FF"
+    late: "#CC0000"
+
+# Sample ids removed from the analysis.
+exclude_samples: []
+
+filter:
+  min_count: 10       # reads
+  min_samples: 8      # smallest group size (8 patients per timepoint)
+
+# Models fitted with edgeR quasi-likelihood. Variables available: patient, timepoint (factor, early/late),
+# delta_grade_c (per-patient CIPN grade change, late - early, centred), late_delta_grade_c (= delta_grade_c on
+# the late draw, 0 on the early one: the timepoint × grade-change interaction), plus every samples.tsv column.
+# `coef` is the column of the design matrix tested.
+models:
+  paired:
+    formula: "~ patient + timepoint"
+    coef: timepointlate
+    description: "Within-patient change from the early to the late draw (primary analysis)."
+  unpaired:
+    formula: "~ timepoint"
+    coef: timepointlate
+    description: "Late vs early as independent groups, as in the paper (for reference)."
+  cipn_worsening:
+    formula: "~ patient + timepoint + late_delta_grade_c"
+    coef: late_delta_grade_c
+    description: "Extra log2FC of the early-to-late change per +1 CIPN grade gained (Δgrade 0, +1, +2)."
+primary_model: paired
+
+de:
+  # User decision 2026-11-21: no miRNA passes FDR < 0.05 in the primary model, so every model uses the
+  # unadjusted p < pvalue_fallback (exploratory). "auto" = FDR, falling back to p only when nothing passes FDR.
+  criterion: pvalue
+  padj: 0.05             # FDR cutoff (reported; used when criterion is padj/auto)
+  pvalue_fallback: 0.01  # unadjusted p-value cutoff
+  lfc: 0.5               # minimum |log2FC|
+
+# miRNAs reported by the authors (both higher in the late draw by sequencing; only miR-3184-5p validated
+# by qPCR). Shown in every model and in the paired-lines plot.
+candidates:
+  - hsa-miR-3184-5p
+  - hsa-miR-222-3p
+
+# Plasma QC: hemolysis ratio log2(miR-451a / miR-23a-3p) on CPM (qPCR rule: ΔCq > 7 suggests hemolysis).
+qc:
+  hemolysis_numerator: hsa-miR-451a
+  hemolysis_denominator: hsa-miR-23a-3p
+
+plots:
+  heatmap_max_mirnas: 40
+
+# Validated targets (multiMiR) of the DE miRNAs of `primary_model`, then GO BP and KEGG over-representation
+# with the targets of all tested miRNAs as universe.
+targets:
+  # Low-throughput, strong evidence only. TarBase (mostly CLIP/high-throughput) was tried on 2026-11-21: 409 k
+  # pairs covering 17,493 genes, so every miRNA "targets" most of the genome and the universe is the genome.
+  databases: [mirtarbase, mirecords]
+  # Only strong evidence (Western blot, luciferase, qPCR) from miRTarBase; set to false to keep every entry.
+  mirtarbase_strong_only: true
+enrichment:
+  orgdb: org.Hs.eg.db
+  organism_kegg: hsa
+  pvalue_cutoff: 0.05
+  min_gs_size: 10
+  max_gs_size: 500
+  # A target counts only if at least this many DE miRNAs hit it (1 = union of their targets).
+  min_mirnas_per_target: 1
+
+seed: 123

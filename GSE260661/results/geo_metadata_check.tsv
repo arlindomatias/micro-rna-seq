@@ -1,0 +1,17 @@
+sample_id	gsm	paper_cycles	paper_grade	geo_title	geo_cycles	geo_grade	cycles_match	grade_match
+G1-S1	GSM8121978	2	1	Plasma, FOLFOX 2 cycles & grade 1, Day0, sample 1	2	1	TRUE	TRUE
+G1-S2	GSM8121979	3	1	Plasma, FOLFOX 3 cycles & grade 1, Day0, sample 2	3	1	TRUE	TRUE
+G1-S3	GSM8121980	3	1	Plasma, FOLFOX 3 cycles & grade 1, Day0, sample 3	3	1	TRUE	TRUE
+G1-S4	GSM8121981	2	1	Plasma, FOLFOX 2 cycles & grade 1, Day0, sample 4	2	1	TRUE	TRUE
+G1-S5	GSM8121982	3	2	Plasma, FOLFOX 3 cycles & grade 2, Day0, sample 5	3	2	TRUE	TRUE
+G1-S6	GSM8121983	3	2	Plasma, FOLFOX 3 cycles & grade 2, Day0, sample 6	3	2	TRUE	TRUE
+G1-S7	GSM8121984	2	1	Plasma, FOLFOX 2 cycles & grade 1, Day0, sample 7	2	1	TRUE	TRUE
+G1-S8	GSM8121985	3	1	Plasma, FOLFOX 3 cycles & grade 1, Day0, sample 8	3	1	TRUE	TRUE
+G2-S1	GSM8121986	7	3	Plasma, FOLFOX 7 cycles & grade 3, Day0, sample 1	7	3	TRUE	TRUE
+G2-S2	GSM8121987	7	2	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 2	7	2	TRUE	TRUE
+G2-S3	GSM8121988	8	2	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 3	7	2	FALSE	TRUE
+G2-S4	GSM8121989	6	1	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 4	7	2	FALSE	FALSE
+G2-S5	GSM8121990	8	3	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 5	7	2	FALSE	FALSE
+G2-S6	GSM8121991	7	2	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 6	7	2	TRUE	TRUE
+G2-S7	GSM8121992	6	2	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 7	7	2	FALSE	TRUE
+G2-S8	GSM8121993	8	3	Plasma, FOLFOX 7 cycles & grade 2, Day0, sample 8	7	2	FALSE	FALSE
