@@ -11,6 +11,78 @@ chemotherapy-induced peripheral neuropathy in patients with colorectal cancer.* 
 
 **Report:** [arlindomatias.github.io/micro-rna-seq/GSE260661/reports/report.html](https://arlindomatias.github.io/micro-rna-seq/GSE260661/reports/report.html)
 
+## The paper
+
+The paper PDF is not kept; this section records the information from it that the analysis uses
+or that is needed to read the results.
+
+**Cohort and design.** Between June 2020 and February 2022, 43 plasma samples were collected from 35 patients
+with colorectal cancer on FOLFOX at Pusan National University Hospital (ethics approval H-1803-014-065,
+CRIS KCT0005353). The patients were split by exposure, because the risk of CIPN rises after ≥ 6 cycles:
+group 1 had ≤ 3 cycles and group 2 had ≥ 6 cycles. **Eight patients were sampled twice**, once in each
+group: these 16 samples are the sequencing (*analysis*) cohort and the GEO series. The other **27 patients**
+(12 with ≤ 3 cycles, 15 with ≥ 6) were sampled once and form the qPCR *validation* cohort, which has no
+sequencing data. CIPN was graded by clinicians with NCI-CTCAE v4.03. Blood was drawn in the morning from the
+median cubital vein, centrifuged at 3,000 g for 10 min at 4 °C, and the plasma was stored at −20 °C.
+
+**Sequencing cohort (paper Table 1, = `data/samples.tsv`).**
+
+| Patient | Age | Sex | 1st draw: cycles, grade | 2nd draw: cycles, grade | Oxaliplatin (mg), 1st → 2nd | T | N | TNM |
+|---|---|---|---|---|---|---|---|---|
+| S1 | 62 | F | 2, grade 1 | 7, grade 3 | 242 → 847 | T4 | N1 | IIIB |
+| S2 | 68 | F | 3, grade 1 | 7, grade 2 | 342 → 798 | T2 | N0 | I |
+| S3 | 56 | F | 3, grade 1 | 8, grade 2 | 378 → 1008 | T3 | N0 | IIA |
+| S4 | 58 | M | 2, grade 1 | 6, grade 1 | 314 → 942 | T4a | N0 | IIB |
+| S5 | 64 | M | 3, grade 2 | 8, grade 3 | 443 → 1176 | T3 | N2b | IIIC |
+| S6 | 71 | M | 3, grade 2 | 7, grade 2 | 471 → 1099 | T2 | N1 | IIIA |
+| S7 | 59 | F | 2, grade 1 | 6, grade 2 | 270 → 810 | T4a | N1b | IVB |
+| S8 | 61 | M | 3, grade 1 | 8, grade 3 | 501 → 1328 | T4a | N0 | IIB |
+
+The figure legends confirm that `G1_S<n>` and `G2_S<n>` are the same patient.
+
+**Validation cohort (paper Table 2; not in GEO).** Group 1 (n = 12): median age 60 (47–72), 6 F / 6 M,
+4 patients at cycle 2 and 8 at cycle 3; CTCAE grade 1 in 9 patients, grade 2 in 3. Group 2 (n = 15): median
+age 61 (52–71), 7 F / 8 M, 5 / 6 / 4 patients at cycles 6 / 7 / 8; grade 1 in 2, grade 2 in 8, grade 3 in 5
+(p < 0.001). Age, sex, T, N and TNM stage did not differ between the groups. Cumulative oxaliplatin dose:
+366.5 ± 82.9 mg vs 974.7 ± 174.5 mg (p < 0.0001).
+
+**Laboratory methods.**
+- RNA was extracted with TRIzol and quantified with a NanoDrop 2000.
+- Libraries: NEBNext Multiplex Small RNA Library Prep, 75 bp single-end, "NextSeq500" in the paper
+  (GEO says NextSeq 550). Reads were trimmed and mapped to miRBase with Bowtie2, then normalized with TMM +
+  CPM in edgeR (GEO processing notes); 2,588 mature miRNAs.
+- qPCR: miRCURY LNA RT and SYBR Green kits (Qiagen) on a QuantStudio 7 Flex, in triplicate, normalized to
+  the spike-in cel-miR-39-3p with 2^−ΔCt. Primer sequences: miR-222-3p `AGCUACAUCUGGCUACUGGGU`,
+  miR-3184-5p `UGAGGGGCCUCAGACCGAGCUUUU`, cel-miR-39-3p `UCACCGGGUGUAAAUCAGCUUG`.
+- Plasma cortisol was measured by ELISA (Thermo Fisher EIAHCOR), and epinephrine, norepinephrine and
+  dopamine by Abnova ELISA kits.
+- Statistics: Mann–Whitney U in SPSS 26 / GraphPad Prism 10.
+
+**Differential expression.** DE miRNAs were selected with ExDEGA 4.0.3 (ebiogen): unadjusted p < 0.05 and a
+fold change described as "log fold-change > 2", although Table 4 reports linear fold changes. The two draws
+were compared as independent groups, without multiple-testing correction. Two miRNAs were reported
+(Table 4), both higher in the ≥ 6-cycle draw (negative fold change = group 1 relative to group 2):
+
+| miRNA | Fold change | p |
+|---|---|---|
+| hsa-miR-222-3p | −2.546 | 0.010 |
+| hsa-miR-3184-5p | −2.665 | 0.025 |
+
+**Validation and other findings.**
+- In the 27-patient qPCR cohort, miR-222-3p did not differ between the groups. miR-3184-5p was lower in
+  the ≤ 3-cycle group (p < 0.05). ROC for CIPN: AUC 0.7806, cut-off < 0.5450, specificity 75.00%
+  (95% CI 43–95%), sensitivity 73.33% (45–92%).
+- Plasma cortisol was higher with ≥ 6 cycles (134.9 ± 20.0 vs 101.1 ± 25.1 ng/ml, p < 0.001).
+  Epinephrine (p = 0.98), norepinephrine (p = 0.59) and dopamine (p = 0.32) did not differ.
+- Predicted targets of miR-3184-5p (overlap of miRDB, miRWalk and miRNet): SOX12, CBX6, LASP1, NAV1,
+  NACC1, SPATA2, WASF2, ASPH, WIPF2, WFIKKN2, ZBTB46. Enrichr GO terms included Fc-gamma receptor
+  signalling, Arp2/3 actin nucleation and the actin cytoskeleton. The KEGG terms were Yersinia and
+  pathogenic *E. coli* infection, adherens junction, Fc-gamma R phagocytosis and choline metabolism in
+  cancer (WASF2, WIPF2, ASPH).
+- The authors conclude that miR-3184-5p and cortisol are putative biomarkers of FOLFOX-induced CIPN.
+  Their data-availability statement says "on request"; only the sequencing counts are public (this GEO
+  series).
+
 ## What is different from the paper
 
 - **No untreated control**: every patient received FOLFOX, so the analysis tests the *within-patient* change
@@ -37,7 +109,6 @@ chemotherapy-induced peripheral neuropathy in patients with colorectal cancer.* 
 ├── results/                   # Tables: QC, DE per model, candidates, targets, enrichment
 ├── plots/                     # Figures
 ├── reports/report.html        # HTML report of the whole analysis
-├── docs/                      # Paper PDF (not versioned)
 └── cache/                     # multiMiR and KEGG downloads (not versioned)
 ```
 
